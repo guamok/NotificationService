@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='utf8'?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>notificationservice</artifactId>
+	<version>1.2.13</version>
+	<packaging>jar</packaging>
+
+	<name>Notification Service</name>
+    <description>Notification management service</description>
+
+	<parent>
+		<groupId>es.fermax</groupId>
+		<artifactId>fermax-cloud-base</artifactId>
+		<version>2.10.5</version>
+	</parent>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<mysql-connector-java.version>8.0.16</mysql-connector-java.version>
+	</properties>
+
+	<dependencies>
+		
+		<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+        
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-junit4</artifactId>
+			<version>1.6.2</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-api-easymock</artifactId>
+			<version>1.6.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-core</artifactId>
+			<version>1.6.2</version>
+			<scope>test</scope>
+		</dependency>
+				
+        <dependency>
+		    <groupId>com.google.firebase</groupId>
+		    <artifactId>firebase-admin</artifactId>
+		    <version>7.2.0</version>
+		</dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
+	</dependencies>
+
+	<repositories>
+		<repository>
+			<snapshots />
+			<id>releases</id>
+			<name>nexus-fermax</name>
+			<url>http://172.30.200.245:8080/nexus/content/repositories/fermax-releases/</url>
+		</repository>
+	</repositories>
+</project>

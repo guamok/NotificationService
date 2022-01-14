@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: notification-service
+  cloud:
+    config:
+      enabled: false
+    kubernetes:
+      reload:
+        enabled: true
+        period: 15000
+        mode: event
+        strategy: refresh
+      config:
+        namespace: default
+        sources:
+          - name: common-bootstrap
+          - name: common-sleuth-zipkin-profile
+          - name: common-logging
+          - name: common-oauth
+          - name: common-swagger
+          - name: common-server-context-path
+          - name: common-services
+          - name: common-datasource-jpa
+          - name: common-spring-rabbitmq
+          - name: common-data-web
+          - name: common-management-endpoint
+  boot:
+    admin:
+      client:
+        instance:
+          service-url: http://notificationservice-service:15245
+          

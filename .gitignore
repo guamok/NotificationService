@@ -1,0 +1,24 @@
+/.project
+/.classpath
+/target/
+/.settings/
+/.springBeans
+/local_deploy
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+/.idea
+/.factorypath
+/data/
+/local_deploy/
+
+#custom property for local/IDe
+*application-loc.yml
+*application-loc.yaml
+*application-loc.properties
+/bin/
+
+src/main/resources/application-ci\.properties

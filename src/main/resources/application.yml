@@ -1,0 +1,41 @@
+server:
+  port: 15321
+  error.whitelabel.enabled: false
+  tomcat:
+    accesslog.enabled: true
+    max-threads: 3
+    
+spring:
+  main.allow-bean-definition-overriding: true
+  data:
+    mongodb:
+      uri: ${COSMOS_URI}
+      database: ${COSMOS_DATABASE}
+      prefix: ${COSMOS_COLLECTIONS_PREFIX}
+    
+logging:
+  file: 
+    path: "target/notification-service.log"
+
+swagger:
+  host: ${K8S_HOST}/notification
+
+fermaxTracelog:
+  enabled: true
+  path: traceLogger.log
+  
+rabbitmq:
+  exchange_name:
+    apptoken: apptoken
+    ack-notification: ack-notification
+    start-call: start-call
+    add-invitee: add-invitee
+    start-ringing: start-ringing
+    missed-call-notification-call-attended: missed-call-notification-call-attended
+    missed-call-notification-call-notattended: missed-call-notification-call-notattended
+
+firebase-sdk:
+  keys:
+    path: "/home/fermaxuser/firebase/"
+    file: ${FIREBASE_SDK_KEY:notset}
+    ttl: ${CALL_NOTIFICATION_TIME_TO_LIVE_NUM_SECS:30}

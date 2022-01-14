@@ -1,0 +1,150 @@
+#Deployment
+apiVersion: apps/{{.Values.apiversion}} # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{.Values.name}}-deployment
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: {{.Values.name}}
+  replicas: {{.Values.replicas}} # tells deployment to run 2 pods matching the template
+  template: # create pods using pod definition in this template
+    metadata:
+      labels:
+        app: {{.Values.name}}
+    spec:
+      serviceAccountName: {{.Values.serviceaccount}}
+      terminationGracePeriodSeconds: {{.Values.graceperiod}}
+      priorityClassName: {{.Values.priority}}
+      containers:
+      - name: {{.Values.name}}
+        image: {{.Values.image}}
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: my-env
+        env:
+        - name: JVM_OPTS
+          value: "-Xmx1024m"
+        - name: SIGN_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: sign-token
+        - name: FERMAX_CLIENT
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: fermax-client
+        - name: FERMAX_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: fermax-secret
+        - name: SBA_USER
+          valueFrom:
+            secretKeyRef:
+              name: spring-boot-admin-credentials
+              key: username
+        - name: SBA_PASS
+          valueFrom:
+            secretKeyRef:
+              name: spring-boot-admin-credentials
+              key: password
+        - name: ADMIN_USER_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: admin-credencials
+              key: username
+        - name: ADMIN_PASS_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: admin-credencials
+              key: password
+        - name: USER_DECRYPTOR_AAD
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: user-decryptor-aad
+        - name: USER_DECRYPTOR_KEY
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: user-decryptor-key
+        - name: USER_DECRYPTOR_NONCE
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: user-decryptor-nonce
+        - name: USER_DECRYPTOR_TAG
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: user-decryptor-tag  
+        - name: RABBITMQ_PWD_ROOT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-ha
+              key: rabbitmq-password
+        - name: RABBITMQ_USER_ROOT
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-ha
+              key: rabbitmq-username
+        - name: COSMOS_URI
+          valueFrom:
+            secretKeyRef:
+              name: cosmos
+              key: cosmos_url
+        - name: COSMOS_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: cosmos
+              key: cosmos_database
+        - name: COSMOS_COLLECTIONS_PREFIX
+          valueFrom:
+            secretKeyRef:
+              name: cosmos
+              key: prefix_database
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "5m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        readinessProbe:
+          httpGet:
+            path: {{.Values.healthpath}}
+            port: http
+          initialDelaySeconds: 100
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 5
+        livenessProbe:
+          httpGet:
+            path: {{.Values.healthpath}}
+            port: http
+          initialDelaySeconds: 100
+          periodSeconds: 15
+          successThreshold: 1
+          failureThreshold: 7
+        ports: 
+        - containerPort: {{.Values.port}} 
+          name: http 
+        - containerPort: {{.Values.debugport}} 
+          name: debug
+        volumeMounts:
+          - mountPath: "/home/fermaxuser/firebase"
+            name: firebase-persistent-storage
+      volumes:
+        - name: firebase-persistent-storage
+          persistentVolumeClaim:
+            claimName: firebasenotification-pv-claim
+      imagePullSecrets:
+        - name: {{.Values.secretregistry}}

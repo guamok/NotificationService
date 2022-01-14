@@ -1,0 +1,154 @@
+#Deployment
+apiVersion: argoproj.io/{{.Values.apiversionargo}} # for versions before 1.9.0 use apps/v1beta2
+kind: Rollout
+metadata:
+  name: {{.Values.name}}-rollout
+  labels:
+    app: {{.Values.name}}
+spec:
+  selector:
+    matchLabels:
+      app: {{.Values.name}}
+  replicas: {{.Values.replicas}} # tells deployment to run 2 pods matching the template
+  template: # create pods using pod definition in this template
+    metadata:
+      labels:
+        app: {{.Values.name}}
+    spec:
+      serviceAccountName: {{.Values.serviceaccount}}
+      terminationGracePeriodSeconds: {{.Values.graceperiod}}
+      priorityClassName: {{.Values.priority}}
+      containers:
+      - name: {{.Values.name}}
+        image: {{.Values.image}}
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: my-env
+        env:
+        - name: JVM_OPTS
+          value: "-Xmx512m"
+        - name: SIGN_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: sign-token
+        - name: FERMAX_CLIENT
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: fermax-client
+        - name: FERMAX_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: fermax-secret
+        - name: SBA_USER
+          valueFrom:
+            secretKeyRef:
+              name: spring-boot-admin-credentials
+              key: username
+        - name: SBA_PASS
+          valueFrom:
+            secretKeyRef:
+              name: spring-boot-admin-credentials
+              key: password
+        - name: ADMIN_USER_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: admin-credencials
+              key: username
+        - name: ADMIN_PASS_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: admin-credencials
+              key: password
+        - name: USER_DECRYPTOR_AAD
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: user-decryptor-aad
+        - name: USER_DECRYPTOR_KEY
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: user-decryptor-key
+        - name: USER_DECRYPTOR_NONCE
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: user-decryptor-nonce
+        - name: USER_DECRYPTOR_TAG
+          valueFrom:
+            secretKeyRef:
+              name: oauth-credentials
+              key: user-decryptor-tag  
+        - name: RABBITMQ_PWD_ROOT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-ha
+              key: rabbitmq-password
+        - name: RABBITMQ_USER_ROOT
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-ha
+              key: rabbitmq-username
+        - name: NOTIFICATION_DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: notificationdb
+              key: user
+        - name: NOTIFICATION_DB_PWD
+          valueFrom:
+            secretKeyRef:
+              name: notificationdb
+              key: password
+        - name: NOTIFICATION_DB_URL
+          valueFrom:
+            secretKeyRef:
+              name: notificationdb
+              key: db_url
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "5m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        ports: 
+        - containerPort: {{.Values.port}} 
+          name: http 
+        - containerPort: {{.Values.debugport}} 
+          name: debug 
+        readinessProbe: 
+          httpGet: 
+            path: {{.Values.healthpath}} 
+            port: http 
+          initialDelaySeconds: 20 
+          periodSeconds: 20 
+          failureThreshold: 2 
+        livenessProbe:
+          httpGet:
+            path: {{.Values.healthpath}}
+            port: http
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          failureThreshold: 3
+      imagePullSecrets:
+        - name: {{.Values.secretregistry}}
+  strategy:
+    canary:
+      canaryService: {{.Values.name}}-service-canary
+      stableService: {{.Values.name}}-service
+      trafficRouting:
+        nginx:
+          stableIngress: {{.Values.stableingress}}
+      steps:
+        - setWeight: 20
+        - pause: {duration: {{.Values.pause}}}
+        - setWeight: 40
+        - pause: {duration: {{.Values.pause}}}
+        - setWeight: 60
+        - pause: {duration: {{.Values.pause}}}
+        - setWeight: 80
+        - pause: {duration: {{.Values.pause}}}

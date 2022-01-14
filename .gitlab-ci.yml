@@ -1,0 +1,34 @@
+include:
+  - project: 'sw/Gitlab-CI-Template'
+    ref: master
+    file: '.gitlab-ci-java-template.yml'
+
+Deploy CI:
+  stage: deploy devel
+  image: gitlab.fermax.com:4576/sw/dockerimagesgitlab/dtzar/helm-kubectl:3.2.4
+  script:
+    - echo "$KUBE_CA_CI" > ca.crt
+    - BRANCH_NAME=$(cat variables.txt | grep BRANCH_NAME | cut -d':' -f2)
+    - kubectl config set-cluster kubernetes --server="$KUBE_URL_CI" --certificate-authority=ca.crt
+    - kubectl config set-credentials kubernetes-admin --token="$KUBE_TOKEN_CI"
+    - kubectl config set-context kubernetes-admin@kubernetes --cluster=kubernetes --user=kubernetes-admin
+    - kubectl config use-context kubernetes-admin@kubernetes
+    - DATETIME=$(cat variables.txt | grep DATETIME | cut -d':' -f2)
+    - VERSION=$BRANCH_NAME-$DATETIME
+    - APP_NAME=$(cat variables.txt | grep POM_ARTIFACT | cut -d':' -f2)
+    - cd charts
+    - helm dep build
+    - sed -i 's/${VERSION}/'"$VERSION"'/g' "values.yaml"
+    - sed -i 's/${VERSION}/'"$VERSION"'/g' "Chart.yaml"
+    - sed -i 's|${REGISTRY}|'"$REGISTRY_HOST"'|g' "values.yaml"
+    - sed -i 's/${SECRETNAME}/'"$SECRET_REGISTRY_GILAB"'/g' "values.yaml"
+    - export RELEASE_NAME="${APP_NAME}"
+    - export DEPLOYS=$(helm ls | grep $RELEASE_NAME | wc -l)
+    - if [ ${DEPLOYS}  -eq 0 ]; then helm install ${RELEASE_NAME} .; else helm upgrade ${RELEASE_NAME} .  ; fi
+    - helm ls
+  dependencies:
+    - Create Values
+  when: manual
+  only:
+    - /^hotfix(.+)/
+    - /^feature(.+)/
